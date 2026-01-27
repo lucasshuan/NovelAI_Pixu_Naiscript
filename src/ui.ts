@@ -57,7 +57,7 @@ export function buildWidgetContent(
     },
     content: [
       api.v1.ui.part.text({
-        text: "Images won’t appear until the extension is installed. Download the extension:\nhttps://github.com/lucasshuan/NovelAI_pixu_Extension/releases",
+        text: "Images won’t appear until the extension is installed. Download the extension:\nhttps://github.com/lucasshuan/NovelAI_Pixu_Extension/releases",
         style: { color: "warning", fontSize: 10 },
       }),
     ],

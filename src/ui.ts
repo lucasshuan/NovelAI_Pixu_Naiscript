@@ -41,9 +41,26 @@ export function buildWidgetContent(
   const imageContainer = api.v1.ui.part.image({
     src: PLACEHOLDER_IMAGE_BASE64,
     height: 340,
-    style: { objectFit: "contain" },
+    style: { objectFit: "contain", borderRadius: "4px" },
     id: `cg-img-${slotKey}`,
     alt: `Image #${slotKey}`,
+  });
+
+  const extensionWarning = api.v1.ui.part.box({
+    id: `cg-warning=${slotKey}`,
+    style: {
+      borderRadius: 6,
+      padding: "0px 6px",
+      width: 340,
+      backgroundColor: "rgba(255, 0, 0, 0.1)",
+      border: "1px solid rgba(255, 0, 0, 0.4)",
+    },
+    content: [
+      api.v1.ui.part.text({
+        text: "Images won’t appear until the extension is installed. Download the extension:\nhttps://github.com/lucasshuan/NovelAI_Foxfire_Extension/releases",
+        style: { color: "warning", fontSize: 10 },
+      }),
+    ],
   });
 
   return [
@@ -52,7 +69,7 @@ export function buildWidgetContent(
       content: [
         api.v1.ui.part.column({
           spacing: "center",
-          content: [headerRow, imageContainer],
+          content: [headerRow, extensionWarning, imageContainer],
         }),
       ],
     }),

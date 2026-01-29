@@ -1,7 +1,6 @@
 <div align="center">
     <img height="240px" src="icon.png">
     <h1>Pixu (User Script)</h1>
-Not affiliated with Anlatan or NovelAI.
 </div>
 
 ## What is this?

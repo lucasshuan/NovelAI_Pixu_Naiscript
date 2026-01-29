@@ -1,9 +1,8 @@
 <div align="center">
     <img src="icon.png">
     <h1>Pixu (User Script)</h1>
+Not affiliated with Anlatan or NovelAI.
 </div>
-
-    Not affiliated with Anlatan or NovelAI.
 
 ## What is this?
 
@@ -13,4 +12,4 @@ Use it alongside <a href="https://github.com/lucasshuan/NovelAI_Pixu_Extension">
 ## Known Issues
 
 - Widgets make the screen go flickering when you are all the way scrolled down.
-
+- Sometimes when an widget is added, the story screen is forcefully scrolled to the bottom.

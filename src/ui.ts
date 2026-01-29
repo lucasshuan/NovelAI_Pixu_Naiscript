@@ -28,7 +28,7 @@ export function buildWidgetContent(
     content: [
       api.v1.ui.part.text({
         text: label,
-        style: { color: "textMain", opacity: 0.25 },
+        style: { color: "textMain", opacity: 0.2, fontSize: 9, wordBreak: "break-word", },
       }),
       api.v1.ui.part.row({
         spacing: "center",

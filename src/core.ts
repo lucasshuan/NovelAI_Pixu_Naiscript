@@ -14,7 +14,7 @@ export async function run(): Promise<void> {
   }
 
   function entryLabel(entry: Entry): string {
-    return `${entry.sectionId}:${entry.order + 1}`;
+    return `${entry.storyId}:${entry.sectionId}:${entry.order + 1}`;
   }
 
   function getMoveInfo(
@@ -110,13 +110,14 @@ export async function run(): Promise<void> {
     }
 
     const entries = await getEntries();
+    const storyId = await api.v1.story.id();
 
     const inSection = entries.filter((e) => e.sectionId === sectionId);
     const nextOrder = inSection.length
       ? Math.max(...inSection.map((e) => e.order)) + 1
       : 0;
 
-    const next: Entry = { id: uid(), sectionId, order: nextOrder };
+    const next: Entry = { id: uid(), storyId, sectionId, order: nextOrder };
 
     await setEntries([...entries, next]);
 

@@ -3,7 +3,18 @@ import type { Entry } from "./types";
 
 export async function getEntries(): Promise<Entry[]> {
   const v = await api.v1.storyStorage.get(KEY_ENTRIES);
-  return (v ?? []) as Entry[];
+  const entries = (v ?? []) as Entry[];
+  const missingStoryId = entries.some((entry) => !entry.storyId);
+  if (!missingStoryId) return entries;
+
+  const storyId = await api.v1.story.id();
+  const updated = entries.map((entry) => ({
+    ...entry,
+    storyId: entry.storyId ?? storyId,
+  }));
+
+  await api.v1.storyStorage.set(KEY_ENTRIES, updated);
+  return updated;
 }
 
 export async function setEntries(entries: Entry[]): Promise<void> {
@@ -11,7 +22,7 @@ export async function setEntries(entries: Entry[]): Promise<void> {
 }
 
 export function stableSlotKey(entry: Entry): string {
-  return entry.id;
+  return `${entry.storyId}:${entry.id}`;
 }
 
 function buildSectionIndex(

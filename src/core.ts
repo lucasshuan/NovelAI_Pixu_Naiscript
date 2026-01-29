@@ -9,10 +9,6 @@ export async function run(): Promise<void> {
     DecorationWidgetHandle<DecorationCreateNodeWidgetOptions>
   >();
 
-  function uid(): string {
-    return Math.random().toString(36).slice(2, 10);
-  }
-
   function entryLabel(entry: Entry): string {
     return `${entry.storyId}:${entry.sectionId}:${entry.order + 1}`;
   }
@@ -117,7 +113,7 @@ export async function run(): Promise<void> {
       ? Math.max(...inSection.map((e) => e.order)) + 1
       : 0;
 
-    const next: Entry = { id: uid(), storyId, sectionId, order: nextOrder };
+    const next: Entry = { id: api.v1.uuid(), storyId, sectionId, order: nextOrder };
 
     await setEntries([...entries, next]);
 

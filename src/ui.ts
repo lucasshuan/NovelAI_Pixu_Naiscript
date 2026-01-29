@@ -41,7 +41,7 @@ export function buildWidgetContent(
   const imageContainer = api.v1.ui.part.image({
     src: PLACEHOLDER_IMAGE_BASE64,
     height: 340,
-    style: { objectFit: "contain", borderRadius: "4px" },
+    style: { objectFit: "contain", borderRadius: "10px", border: "2px dashed textHeadings" },
     id: `cg-img-${slotKey}`,
     alt: `Image #${slotKey}`,
   });

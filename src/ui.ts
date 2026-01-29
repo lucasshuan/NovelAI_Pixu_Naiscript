@@ -6,11 +6,9 @@ type RemoveEntryHandler = (entryId: string) => Promise<void>;
 
 export function buildWidgetContent(
   entry: Entry,
-  slotNumber: number,
+  label: string,
   onRemove: RemoveEntryHandler,
 ): UIPart[] {
-  const label = `Image Slot #${slotNumber}`;
-
   const headerRow = api.v1.ui.part.row({
     spacing: "space-between",
     content: [
@@ -41,7 +39,7 @@ export function buildWidgetContent(
   const imageContainer = api.v1.ui.part.image({
     src: PLACEHOLDER_IMAGE_BASE64,
     height: 340,
-    style: { objectFit: "contain", borderRadius: "10px", border: "2px dashed textHeadings" },
+    style: { display: "none", objectFit: "contain", borderRadius: "10px", border: "2px dashed textHeadings" },
     id: `cg-img-${slotKey}`,
     alt: `Image #${slotKey}`,
   });

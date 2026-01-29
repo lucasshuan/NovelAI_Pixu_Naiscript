@@ -1,32 +1,54 @@
 import { ensurePerms, registerHooks } from "./hooks";
-import { getEntries, getOrderedEntries, setEntries } from "./storage";
+import { getEntries, setEntries } from "./storage";
 import { buildWidgetContent, renderPanel } from "./ui";
 import type { Entry } from "./types";
 
 export async function run(): Promise<void> {
+  const widgetHandles = new Map<
+    string,
+    DecorationWidgetHandle<DecorationCreateNodeWidgetOptions>
+  >();
+
   function uid(): string {
     return Math.random().toString(36).slice(2, 10);
   }
 
-  async function rebuildAllWidgets(): Promise<void> {
-    await ensurePerms();
+  function entryLabel(entry: Entry): string {
+    return `Image Slot ${entry.sectionId}:${entry.order + 1}`;
+  }
 
-    api.v1.editor.decorations.clearWidgets();
+  async function createWidget(entry: Entry): Promise<void> {
+    const handle = await api.v1.editor.decorations.createWidget({
+      type: "node",
+      sectionId: entry.sectionId,
+      side: "after",
+      content: buildWidgetContent(entry, entryLabel(entry), removeEntry),
+      onChange: (event) => {
+        if (event.type === "dispose") {
+          widgetHandles.delete(entry.id);
+        }
+      },
+    } as DecorationCreateNodeWidgetOptions);
 
+    widgetHandles.set(entry.id, handle);
+  }
+
+  async function syncWidgets(): Promise<void> {
     const entries = await getEntries();
-    const ordered = await getOrderedEntries(entries);
+    const entryIds = new Set(entries.map((entry) => entry.id));
 
-    const widgetOpts = ordered.map(
-      (e, idx) =>
-        ({
-          type: "node",
-          sectionId: e.sectionId,
-          side: "after",
-          content: buildWidgetContent(e, idx + 1, removeEntry),
-        }) as DecorationCreateNodeWidgetOptions,
-    );
+    for (const [entryId, handle] of widgetHandles) {
+      if (!entryIds.has(entryId)) {
+        await handle.dispose();
+        widgetHandles.delete(entryId);
+      }
+    }
 
-    await api.v1.editor.decorations.createWidgets(widgetOpts);
+    for (const entry of entries) {
+      if (!widgetHandles.has(entry.id)) {
+        await createWidget(entry);
+      }
+    }
   }
 
   async function addImageHere(): Promise<void> {
@@ -53,16 +75,21 @@ export async function run(): Promise<void> {
 
     await setEntries([...entries, next]);
 
-    await rebuildAllWidgets();
+    await createWidget(next);
   }
 
   async function clearEntries(): Promise<void> {
+    await ensurePerms();
     await setEntries([]);
-    api.v1.editor.decorations.clearWidgets();
+    for (const handle of widgetHandles.values()) {
+      await handle.dispose();
+    }
+    widgetHandles.clear();
     api.v1.ui.toast("Cleared saved image slots for this story.");
   }
 
   async function removeEntry(entryId: string): Promise<void> {
+    await ensurePerms();
     const entries = await getEntries();
     const entry = entries.find((e) => e.id === entryId);
     if (!entry) return;
@@ -70,10 +97,19 @@ export async function run(): Promise<void> {
     const nextEntries = entries.filter((e) => e.id !== entryId);
     await setEntries(nextEntries);
 
-    await rebuildAllWidgets();
+    const handle = widgetHandles.get(entryId);
+    if (handle) {
+      await handle.dispose();
+      widgetHandles.delete(entryId);
+    }
   }
 
-  registerHooks(rebuildAllWidgets);
+  registerHooks(async () => {
+    await ensurePerms();
+    api.v1.editor.decorations.clearWidgets();
+    widgetHandles.clear();
+    await syncWidgets();
+  });
 
   await renderPanel({
     onAddImageSlot: addImageHere,

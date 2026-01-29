@@ -6,9 +6,9 @@ export async function ensurePerms(): Promise<void> {
 }
 
 export function registerHooks(
-  rebuildAllWidgets: () => Promise<void>,
+  initWidgets: () => Promise<void>,
 ): void {
   api.v1.hooks.register("onScriptsLoaded", async () => {
-    await rebuildAllWidgets();
+    await initWidgets();
   });
 }

@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="icon.png">
+    <img height="150px" src="icon.png">
     <h1>Pixu (User Script)</h1>
 </div>
 
@@ -13,4 +13,3 @@ Use it alongside <a href="https://github.com/lucasshuan/NovelAI_Pixu_Extension">
 ## Known Issues
 
 - Widgets make the screen go flickering when you are all the way scrolled down.
-

@@ -11,7 +11,7 @@ export async function setEntries(entries: Entry[]): Promise<void> {
 }
 
 export function stableSlotKey(entry: Entry): string {
-  return `${entry.sectionId}:${entry.order}:${entry.id}`;
+  return entry.id;
 }
 
 function buildSectionIndex(

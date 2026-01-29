@@ -14,15 +14,59 @@ export async function run(): Promise<void> {
   }
 
   function entryLabel(entry: Entry): string {
-    return `Image Slot ${entry.sectionId}:${entry.order + 1}`;
+    return `${entry.sectionId}:${entry.order + 1}`;
   }
 
-  async function createWidget(entry: Entry): Promise<void> {
+  function getMoveInfo(
+    sections: { sectionId: number }[],
+    sectionId: number,
+  ): {
+    canMoveUp: boolean;
+    canMoveDown: boolean;
+    prevSectionId: number | null;
+    nextSectionId: number | null;
+  } {
+    const index = sections.findIndex((section) => section.sectionId === sectionId);
+    if (index === -1) {
+      return {
+        canMoveUp: false,
+        canMoveDown: false,
+        prevSectionId: null,
+        nextSectionId: null,
+      };
+    }
+
+    const prevSectionId = index > 0 ? sections[index - 1].sectionId : null;
+    const nextSectionId =
+      index < sections.length - 1 ? sections[index + 1].sectionId : null;
+
+    return {
+      canMoveUp: prevSectionId !== null,
+      canMoveDown: nextSectionId !== null,
+      prevSectionId,
+      nextSectionId,
+    };
+  }
+
+  async function createWidget(
+    entry: Entry,
+    sections?: { sectionId: number }[],
+  ): Promise<void> {
+    const docSections = sections ?? (await api.v1.document.scan());
+    const moveInfo = getMoveInfo(docSections, entry.sectionId);
+
     const handle = await api.v1.editor.decorations.createWidget({
       type: "node",
       sectionId: entry.sectionId,
       side: "after",
-      content: buildWidgetContent(entry, entryLabel(entry), removeEntry),
+      content: buildWidgetContent(
+        entry,
+        entryLabel(entry),
+        removeEntry,
+        moveEntry,
+        moveInfo.canMoveUp,
+        moveInfo.canMoveDown,
+      ),
       onChange: (event) => {
         if (event.type === "dispose") {
           widgetHandles.delete(entry.id);
@@ -36,6 +80,7 @@ export async function run(): Promise<void> {
   async function syncWidgets(): Promise<void> {
     const entries = await getEntries();
     const entryIds = new Set(entries.map((entry) => entry.id));
+    const sections = await api.v1.document.scan();
 
     for (const [entryId, handle] of widgetHandles) {
       if (!entryIds.has(entryId)) {
@@ -46,7 +91,7 @@ export async function run(): Promise<void> {
 
     for (const entry of entries) {
       if (!widgetHandles.has(entry.id)) {
-        await createWidget(entry);
+        await createWidget(entry, sections);
       }
     }
   }
@@ -102,6 +147,48 @@ export async function run(): Promise<void> {
       await handle.dispose();
       widgetHandles.delete(entryId);
     }
+  }
+
+  async function moveEntry(
+    entryId: string,
+    direction: "up" | "down",
+  ): Promise<void> {
+    await ensurePerms();
+
+    const entries = await getEntries();
+    const entry = entries.find((candidate) => candidate.id === entryId);
+    if (!entry) return;
+
+    const sections = await api.v1.document.scan();
+    const moveInfo = getMoveInfo(sections, entry.sectionId);
+    const targetSectionId =
+      direction === "up" ? moveInfo.prevSectionId : moveInfo.nextSectionId;
+
+    if (targetSectionId === null) return;
+
+    const inTarget = entries.filter((e) => e.sectionId === targetSectionId);
+    const nextOrder = inTarget.length
+      ? Math.max(...inTarget.map((e) => e.order)) + 1
+      : 0;
+
+    const updatedEntry: Entry = {
+      ...entry,
+      sectionId: targetSectionId,
+      order: nextOrder,
+    };
+
+    const nextEntries = entries.map((e) =>
+      e.id === entryId ? updatedEntry : e,
+    );
+
+    await setEntries(nextEntries);
+
+    const handle = widgetHandles.get(entryId);
+    if (handle) {
+      await handle.dispose();
+      widgetHandles.delete(entryId);
+    }
+    await createWidget(updatedEntry, sections);
   }
 
   registerHooks(async () => {

@@ -1,35 +1,64 @@
-import { PANEL_ID, PLACEHOLDER_IMAGE_BASE64 } from "./config";
+import { PANEL_ID } from "./config";
 import { stableSlotKey } from "./storage";
 import type { Entry } from "./types";
 
 type RemoveEntryHandler = (entryId: string) => Promise<void>;
+type MoveEntryHandler = (entryId: string, direction: "up" | "down") => Promise<void>;
 
 export function buildWidgetContent(
   entry: Entry,
   label: string,
   onRemove: RemoveEntryHandler,
+  onMove: MoveEntryHandler,
+  canMoveUp: boolean,
+  canMoveDown: boolean,
 ): UIPart[] {
+  const buttonStyle = {
+    backgroundColor: "bg2",
+    height: 24,
+    width: 24,
+    padding: 0,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  };
+
   const headerRow = api.v1.ui.part.row({
     spacing: "space-between",
     content: [
       api.v1.ui.part.text({
         text: label,
-        style: { color: "textMain", opacity: 0.3 },
+        style: { color: "textMain", opacity: 0.25 },
       }),
-      api.v1.ui.part.button({
-        iconId: "x",
-        style: {
-          backgroundColor: "bg2",
-          height: 24,
-          width: 24,
-          padding: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        callback: async () => {
-          await onRemove(entry.id);
-        },
+      api.v1.ui.part.row({
+        spacing: "center",
+        content: [
+          api.v1.ui.part.button({
+            iconId: "arrow-up",
+            style: buttonStyle,
+            disabled: !canMoveUp,
+            disabledWhileCallbackRunning: true,
+            callback: async () => {
+              await onMove(entry.id, "up");
+            },
+          }),
+          api.v1.ui.part.button({
+            iconId: "arrow-down",
+            style: buttonStyle,
+            disabled: !canMoveDown,
+            disabledWhileCallbackRunning: true,
+            callback: async () => {
+              await onMove(entry.id, "down");
+            },
+          }),
+          api.v1.ui.part.button({
+            iconId: "x",
+            style: buttonStyle,
+            callback: async () => {
+              await onRemove(entry.id);
+            },
+          }),
+        ],
       }),
     ],
   });
@@ -37,7 +66,7 @@ export function buildWidgetContent(
   const slotKey = stableSlotKey(entry);
 
   const imageContainer = api.v1.ui.part.image({
-    src: PLACEHOLDER_IMAGE_BASE64,
+    src: "",
     height: 340,
     style: { display: "none", objectFit: "contain", borderRadius: "10px", border: "2px dashed textHeadings" },
     id: `cg-img-${slotKey}`,

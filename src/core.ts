@@ -61,7 +61,6 @@ export async function run(): Promise<void> {
       side: "after",
       content: buildWidgetContent(
         entry,
-        entryLabel(entry),
         removeEntry,
         moveEntry,
         moveInfo.canMoveUp,

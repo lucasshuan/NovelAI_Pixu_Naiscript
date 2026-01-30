@@ -7,7 +7,6 @@ type MoveEntryHandler = (entryId: string, direction: "up" | "down") => Promise<v
 
 export function buildWidgetContent(
   entry: Entry,
-  label: string,
   onRemove: RemoveEntryHandler,
   onMove: MoveEntryHandler,
   canMoveUp: boolean,
@@ -24,15 +23,42 @@ export function buildWidgetContent(
   };
 
   const headerRow = api.v1.ui.part.row({
-    spacing: "space-between",
+    spacing: "end",
     content: [
-      api.v1.ui.part.text({
-        text: label,
-        style: { color: "textMain", opacity: 0.2, fontSize: 9, wordBreak: "break-word", },
-      }),
       api.v1.ui.part.row({
         spacing: "center",
+        style: { display: "flex", gap: "0px" },
         content: [
+          api.v1.ui.part.button({
+            id: `cg-clear-${entry.id}`,
+            iconId: "trash",
+            style: {
+              ...buttonStyle,
+              marginRight: 8,
+              color: "warning",
+            },
+            callback: () => { },
+          }),
+          api.v1.ui.part.button({
+            id: `cg-zoom-${entry.id}`,
+            iconId: "zoom-in",
+            style: {
+              ...buttonStyle,
+              marginRight: 8,
+            },
+            callback: () => { },
+          }),
+          api.v1.ui.part.button({
+            id: `cg-save-${entry.id}`,
+            iconId: "save",
+            style: {
+              ...buttonStyle,
+              marginRight: 8,
+            },
+            callback: () => {
+              api.v1.log("test");
+            },
+          }),
           api.v1.ui.part.button({
             iconId: "arrow-up",
             style: buttonStyle,
@@ -44,7 +70,10 @@ export function buildWidgetContent(
           }),
           api.v1.ui.part.button({
             iconId: "arrow-down",
-            style: buttonStyle,
+            style: {
+              ...buttonStyle,
+              marginRight: 8,
+            },
             disabled: !canMoveDown,
             disabledWhileCallbackRunning: true,
             callback: async () => {
@@ -53,9 +82,38 @@ export function buildWidgetContent(
           }),
           api.v1.ui.part.button({
             iconId: "x",
-            style: buttonStyle,
+            style: { ...buttonStyle },
+            disabledWhileCallbackRunning: true,
             callback: async () => {
-              await onRemove(entry.id);
+              const modal = await api.v1.ui.modal.open({
+                title: "Delete image slot?",
+                size: "small",
+                hasMinimumHeight: false,
+                content: [
+                  api.v1.ui.part.text({
+                    text: "This will remove the slot from this story. This action cannot be undone.",
+                  }),
+                  api.v1.ui.part.row({
+                    spacing: "end",
+                    content: [
+                      api.v1.ui.part.button({
+                        text: "Cancel",
+                        callback: async () => {
+                          await modal.close();
+                        },
+                      }),
+                      api.v1.ui.part.button({
+                        text: "Delete",
+                        style: { color: "warning" },
+                        callback: async () => {
+                          await onRemove(entry.id);
+                          await modal.close();
+                        },
+                      }),
+                    ],
+                  }),
+                ],
+              });
             },
           }),
         ],
